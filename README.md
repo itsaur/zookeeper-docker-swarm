@@ -10,7 +10,7 @@ An example of the Docker Service create command is:
 
 ```bash
 docker service create \
-    --name zookeeper
+    --name zookeeper \
     -p 2181:2181 \
     -e "SERVICE_NAME=zookeeper" \
     itsaur/zookeeper
