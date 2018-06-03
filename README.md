@@ -17,5 +17,5 @@ docker service create \
     --name zookeeper \
     -p 2181:2181 \
     -e "SERVICE_NAME=zookeeper" \
-    itsaur/zookeeper
+    itsaur/zookeeper-replicated
 ```
