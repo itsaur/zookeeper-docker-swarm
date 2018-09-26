@@ -8,14 +8,24 @@ This is an extension to the [official Zookeeper Docker image](https://store.dock
 This image lets you configure Zookeeper in [replicated mode](http://zookeeper.apache.org/doc/current/zookeeperStarted.html#sc_RunningReplicatedZooKeeper) 
 as a single docker service, instead of creating three (or more) different services for each one of your nodes as proposed by the official image.
 
-The only thing needed is to provide the environment variable `SERVICE_NAME` when creating the swarm service having as value the name of your docker service. Using this variable, each container will be able to discover the rest Zookeeper nodes.
+You will need a docker overlay network and an environment variable named `SERVICE_NAME` that equals the docker service name, when creating the swarm service.
+Using this variable, each container will be able to discover the rest ZooKeeper nodes in their network.
 
-An example of the Docker Service create command is:
+An example of the **docker network create** is:
+
+```bash
+docker network create \
+    --driver overlay zookeeper-net
+```
+
+An example of the **docker service create** is:
 
 ```bash
 docker service create \
+    --env "SERVICE_NAME=zookeeper" \
     --name zookeeper \
-    -p 2181:2181 \
-    -e "SERVICE_NAME=zookeeper" \
+    --network zookeeper-net \
+    --publish 2181:2181 \
+    --replicas=3 \
     itsaur/zookeeper-replicated
 ```
