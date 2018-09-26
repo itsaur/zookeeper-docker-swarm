@@ -23,8 +23,8 @@ else
 
     ZOO_MY_IP=$(hostname -i)
     echo "My IP: $ZOO_MY_IP"
-    INDEX=$(echo $ZOO_MY_IP | cut -d . -f 4)
-    ZOO_MY_ID=$((--INDEX))
+
+    [[ -f $ZOO_DATA_DIR/myid ]] && ZOO_MY_ID=$(cat $ZOO_DATA_DIR/myid) || ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
     echo "My ID: $ZOO_MY_ID"
 
     discoverNodes
@@ -56,7 +56,7 @@ else
     echo "skipACL=$ZOO_SKIP_ACL" >> "$CONFIG"
     echo "dynamicConfigFile=$ZOO_DYNAMIC_CONFIG_FILE" >> "$CONFIG"
 
-    echo $ZOO_MY_ID >> $ZOO_DATA_DIR/myid
+    echo $ZOO_MY_ID > $ZOO_DATA_DIR/myid
 
     su -c 'touch $ZOO_DYNAMIC_CONFIG_FILE' $ZOO_USER
 
