@@ -1,38 +1,100 @@
 #!/bin/bash
+function initialize() {
+    echo "Initializing $1 ZooKeeper."
+}
+
 function healthy() {
+    echo -n "Checking health. "
     HEALTHY=$(cat /usr/local/bin/HEALTHY)
 }
 
 function discoverNodes() {
-    echo "Discovering other nodes in cluster..."
-    NODES=$(dig tasks.$SERVICE_NAME +short)
+    echo -n "Discovering nodes in cluster. "
+    NODES=($(dig tasks.$SERVICE_NAME +short))
 }
 
-if [[ -z $SERVICE_NAME ]]
-then
-    echo "Running standalone."
-else
-    echo "Running in Swarm mode for service: $SERVICE_NAME"
+if [[ -n $SERVICE_NAME ]]
+then initialize "replicated"
+else initialize "standalone"
+fi
 
+echo "Container is initializing."
+echo "Setting INITIALIZED=0."
+echo 0 | tee /usr/local/bin/INITIALIZED 1>/dev/null
+
+CONFIG="$ZOO_CONF_DIR/zoo.cfg"
+
+{
+    [[ -z $SERVICE_NAME ]] && echo "clientPort=$ZOO_PORT"
+
+    echo "dataDir=$ZOO_DATA_DIR"
+    echo "dataLogDir=$ZOO_DATA_LOG_DIR"
+
+    echo "tickTime=$ZOO_TICK_TIME"
+    if [[ -n $SERVICE_NAME ]]
+    then
+        echo "initLimit=$ZOO_INIT_LIMIT"
+        echo "syncLimit=$ZOO_SYNC_LIMIT"
+    fi
+
+    echo "maxClientCnxns=$ZOO_MAX_CLIENT_CNXNS"
+    echo "reconfigEnabled=$ZOO_RECONFIG_ENABLED"
+    echo "skipACL=$ZOO_SKIP_ACL"
+} >> "$CONFIG"
+
+healthy
+while [[ $HEALTHY -eq 0 ]]
+do
+    echo "Sleeping for 1s."
+    sleep 1
     healthy
-    while [[ $HEALTHY -eq 0 ]]
-    do
-        sleep 1
-        healthy
-    done
+done
+echo "Healthy."
 
-    ZOO_MY_IP=$(hostname -i)
-    echo "My IP: $ZOO_MY_IP"
+ZOO_MY_IP=$(hostname -i)
+echo "My IP: $ZOO_MY_IP"
 
-    [[ -f $ZOO_DATA_DIR/myid ]] && ZOO_MY_ID=$(cat $ZOO_DATA_DIR/myid) || ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
-    echo "My ID: $ZOO_MY_ID"
+if [[ -f $ZOO_DATA_DIR/myid ]]
+then ZOO_MY_ID=$(cat $ZOO_DATA_DIR/myid)
+else ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
+fi
+echo "My ID: $ZOO_MY_ID"
 
+echo "Initializing ZooKeeper with ID: $ZOO_MY_ID."
+zkServer-initialize.sh --myid=$ZOO_MY_ID
+
+if [[ -n $SERVICE_NAME ]]
+then
+    echo "dynamicConfigFile=$ZOO_DYNAMIC_CONFIG_FILE" >> "$CONFIG"
+
+    su -c 'touch $ZOO_DYNAMIC_CONFIG_FILE' $ZOO_USER
+
+    if [[ -z REPLICAS ]]
+    then
+        echo "REPLICAS not supplied."
+        exit 1
+    fi
+
+    if [[ -z TIMEOUT ]]
+    then
+        echo "TIMEOUT not supplied."
+        exit 1
+    fi
+
+    startTime=$(date +%s)
     discoverNodes
-    while [[ -z $NODES ]]
+    while [[ ${#NODES[@]} -lt $REPLICAS ]]
     do
+        if [[ $(($(date +%s)-$startTime)) -ge $TIMEOUT ]]
+        then
+            echo "Could not find other nodes in ${TIMEOUT}s."
+            exit 1
+        fi
+        echo "$(($(date +%s)-$startTime))s elapsed."
         sleep 1
         discoverNodes
     done
+    echo "Found."
 
     for NODE_IP in ${NODES[@]}
     do
@@ -41,57 +103,34 @@ else
         ZOO_SERVERS+=("server.$NODE_ID=$NODE_IP:2888:3888;$ZOO_PORT")
     done
 
-    CONFIG="$ZOO_CONF_DIR/zoo.cfg"
-
-    echo "dataDir=$ZOO_DATA_DIR" >> "$CONFIG"
-    echo "dataLogDir=$ZOO_DATA_LOG_DIR" >> "$CONFIG"
-
-    echo "tickTime=$ZOO_TICK_TIME" >> "$CONFIG"
-    echo "initLimit=$ZOO_INIT_LIMIT" >> "$CONFIG"
-    echo "syncLimit=$ZOO_SYNC_LIMIT" >> "$CONFIG"
-
-    echo "maxClientCnxns=$ZOO_MAX_CLIENT_CNXNS" >> "$CONFIG"
-    echo "standaloneEnabled=$ZOO_STANDALONE_ENABLED" >> "$CONFIG"
-    echo "reconfigEnabled=$ZOO_RECONFIG_ENABLED" >> "$CONFIG"
-    echo "skipACL=$ZOO_SKIP_ACL" >> "$CONFIG"
-    echo "dynamicConfigFile=$ZOO_DYNAMIC_CONFIG_FILE" >> "$CONFIG"
-
-    echo $ZOO_MY_ID > $ZOO_DATA_DIR/myid
-
-    su -c 'touch $ZOO_DYNAMIC_CONFIG_FILE' $ZOO_USER
-
     DYNAMIC_CONFIG="$ZOO_DYNAMIC_CONFIG_FILE"
 
-    for ZOO_SERVER in ${ZOO_SERVERS[@]}
-    do
-        echo "$ZOO_SERVER" >> "$DYNAMIC_CONFIG"
-    done
+    {
+        for ZOO_SERVER in ${ZOO_SERVERS[@]}
+        do
+            echo "$ZOO_SERVER"
+        done
+    } >> "$DYNAMIC_CONFIG"
+
+    echo "Printing dynamic configuration..."
+    cat "$DYNAMIC_CONFIG"
 
     ZOO_SERVERS=(${NODES[@]})
 
     echo "ZooKeeper servers in dynamic configuration: ${ZOO_SERVERS[@]}."
-
-    ZOO_REG_EX="^server.\d{1,3}=\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}:\d+:\d+(:(observer|participant))?;\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}:\d+"
-
-    if [[ -z $ZOO_SERVERS ]]
-    then
-        zkServer-initialize.sh --force --myid=$ZOO_MY_ID
-    else
-        for ZOO_SERVER in ${ZOO_SERVERS[@]}
-        do
-            if [[ $(zkCli.sh -server $ZOO_SERVER:2181 get /zookeeper/config | egrep $ZOO_REG_EX | wc -l) -gt 0 ]]
-            then
-                zkServer-initialize.sh --force --myid=$ZOO_MY_ID
-                zkServer.sh start
-                zkCli.sh -server $ZOO_SERVER:2181 reconfig -add "server.$ZOO_MY_ID=$ZOO_MY_IP:2888:3888;$ZOO_PORT"
-                zkServer.sh stop
-                break
-            fi
-        done
-    fi
-
-    echo 1 | tee /usr/local/bin/INITIALIZED
-    rm /usr/local/bin/HEALTHY
 fi
 
+echo "Container is initialized."
+echo "Setting INITIALIZED=1."
+echo 1 | tee /usr/local/bin/INITIALIZED 1>/dev/null
+echo "Setting HEALTHY=0."
+echo 0 | tee /usr/local/bin/HEALTHY 1>/dev/null
+
+if [[ -n $SERVICE_NAME ]]
+then
+    crontab /usr/local/bin/crontab.txt
+    crond -b -l 0
+fi
+
+echo "Executing docker-entrypoint for ZooKeeper with ID: $ZOO_MY_ID."
 exec sh /docker-entrypoint.sh "$@"
