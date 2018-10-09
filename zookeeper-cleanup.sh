@@ -82,8 +82,8 @@ case "$status" in
             echo "Looping through configuration dictionary."
             for ZOO_IP in ${!dictionary[@]}
             do
-                check=$(grep $ZOO_IP $directory/nodes | wc -l)
-                echo "grep $ZOO_IP $directory/nodes | wc -l equals $check."
+                check=$(grep -c $ZOO_IP $directory/nodes)
+                echo "grep -c $ZOO_IP $directory/nodes equals $check."
                 if [[ $check -eq 0 ]]
                 then
                     removeFlag=1
@@ -101,8 +101,8 @@ case "$status" in
             echo "Looping through $directory/nodes."
             for ZOO_IP in $(cat $directory/nodes)
             do
-                check=$(grep $ZOO_IP $directory/configuration | wc -l)
-                echo "grep $ZOO_IP $directory/configuration | wc -l equals $check."
+                check=$(grep -c $ZOO_IP $directory/configuration)
+                echo "grep -c $ZOO_IP $directory/configuration equals $check."
                 if [[ $check -eq 0 ]]
                 then
                     addFlag=1

@@ -10,7 +10,7 @@ then
     exit 0
 fi
 
-if [[ $(netstat -lnpt | grep 8080 | wc -l) -eq 0 ]]
+if [[ $(netstat -lnpt | grep -c 8080) -eq 0 ]]
 then
     echo "AdminServer is not listening on 8080."
     exit 1
