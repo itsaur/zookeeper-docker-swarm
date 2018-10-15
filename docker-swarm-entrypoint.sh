@@ -54,10 +54,7 @@ echo "Healthy."
 ZOO_MY_IP=$(hostname -i)
 echo "My IP: $ZOO_MY_IP"
 
-if [[ -f $ZOO_DATA_DIR/myid ]]
-then ZOO_MY_ID=$(cat $ZOO_DATA_DIR/myid)
-else ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
-fi
+ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
 echo "My ID: $ZOO_MY_ID"
 
 echo "Initializing ZooKeeper with ID: $ZOO_MY_ID."
