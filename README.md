@@ -22,6 +22,7 @@ An example of the **docker service create** is:
 
 ```bash
 docker service create \
+    --env "REPLICAS=3" \
     --env "SERVICE_NAME=zookeeper" \
     --name zookeeper \
     --network zookeeper-net \
