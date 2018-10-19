@@ -8,8 +8,6 @@ bind-tools \
 coreutils \
 curl \
 jq \
-nano \
-openjdk8 \
 procps \
 su-exec
 

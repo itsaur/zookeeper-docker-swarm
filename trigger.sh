@@ -7,6 +7,6 @@ fi
 
 for (( i = 0; i < 12; i++ ))
 do
-    (sleep $(($i*5)) && $1 &>>"/var/log/$(date +%Y.%m.%dT%H:%M:%S.%3N).log" 2>&1) &
+    (sleep $(($i*5)) && $1 $((++i)) &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1) &
 done
 exit 0

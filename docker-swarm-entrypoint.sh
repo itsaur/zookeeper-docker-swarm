@@ -25,7 +25,7 @@ echo 0 | tee /usr/local/bin/INITIALIZED 1>/dev/null
 CONFIG="$ZOO_CONF_DIR/zoo.cfg"
 
 {
-    [[ -z $SERVICE_NAME ]] && echo "clientPort=$ZOO_PORT"
+    echo "clientPort=$ZOO_PORT"
 
     echo "dataDir=$ZOO_DATA_DIR"
     echo "dataLogDir=$ZOO_DATA_LOG_DIR"
@@ -72,11 +72,7 @@ then
         exit 1
     fi
 
-    if [[ -z TIMEOUT ]]
-    then
-        echo "TIMEOUT not supplied."
-        exit 1
-    fi
+    [[ -z "$TIMEOUT" ]] && TIMEOUT=60
 
     startTime=$(date +%s)
     discoverNodes
