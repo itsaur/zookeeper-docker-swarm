@@ -66,7 +66,7 @@ then
 
     su -c 'touch $ZOO_DYNAMIC_CONFIG_FILE' $ZOO_USER
 
-    if [[ -z REPLICAS ]]
+    if [[ -z $REPLICAS ]]
     then
         echo "REPLICAS not supplied."
         exit 1
