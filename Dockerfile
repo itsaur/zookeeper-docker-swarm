@@ -15,14 +15,12 @@ ARG DIR=/usr/local/bin
 COPY crontab.txt \
 docker-healthcheck \
 docker-swarm-entrypoint.sh \
-trigger.sh \
 zookeeper-cleanup.sh \
 $DIR/
 
 RUN chgrp 0 $DIR/docker-healthcheck && \
 chmod +x $DIR/docker-healthcheck \
 $DIR/docker-swarm-entrypoint.sh \
-$DIR/trigger.sh \
 $DIR/zookeeper-cleanup.sh && \
 echo 0 | tee $DIR/HEALTHY $DIR/INITIALIZED 1>/dev/null
 

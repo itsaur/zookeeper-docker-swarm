@@ -1,3 +1,14 @@
 SHELL=/bin/bash
-* * * * * /usr/local/bin/trigger.sh /usr/local/bin/zookeeper-cleanup.sh
+* * * * * sleep 5 && /usr/local/bin/zookeeper-cleanup.sh 1 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 10 && /usr/local/bin/zookeeper-cleanup.sh 2 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 15 && /usr/local/bin/zookeeper-cleanup.sh 3 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 20 && /usr/local/bin/zookeeper-cleanup.sh 4 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 25 && /usr/local/bin/zookeeper-cleanup.sh 5 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 30 && /usr/local/bin/zookeeper-cleanup.sh 6 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 35 && /usr/local/bin/zookeeper-cleanup.sh 7 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 40 && /usr/local/bin/zookeeper-cleanup.sh 8 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 45 && /usr/local/bin/zookeeper-cleanup.sh 9 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 50 && /usr/local/bin/zookeeper-cleanup.sh 10 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 55 && /usr/local/bin/zookeeper-cleanup.sh 11 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
+* * * * * sleep 60 && /usr/local/bin/zookeeper-cleanup.sh 12 &>>"/var/log/$(date +%Y.%m.%d).log" 2>&1
 @daily find /var/log/ -name "*.log" -mtime +7 -type f -delete
