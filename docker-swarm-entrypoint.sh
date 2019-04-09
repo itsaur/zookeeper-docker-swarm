@@ -58,6 +58,7 @@ ZOO_MY_ID=$(($(echo $ZOO_MY_IP | cut -d . -f 4)-1))
 echo "My ID: $ZOO_MY_ID"
 
 echo "Initializing ZooKeeper with ID: $ZOO_MY_ID."
+echo $ZOO_MY_ID > "$ZOO_DATA_DIR/myid"
 zkServer-initialize.sh --myid=$ZOO_MY_ID
 
 if [[ -n $SERVICE_NAME ]]
